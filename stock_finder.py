@@ -3,11 +3,12 @@ import numpy as np
 from pykrx import stock
 from datetime import datetime, timedelta
 
-def 일봉_신고거래량(stock_list):
+def 일봉_신고거래량(df_all_stocks) -> pd.DataFrame:
     # 모든 종목을 순회하며 조건에 부합하는 종목을 찾는다
     # 시가    고가    저가    종가      거래량       등락률
-    find_stock_codes = []
-    for stock_code in stock_list['종목코드']:
+    find_stock_list = []
+    for _, stock_item in df_all_stocks.iterrows():
+        stock_code = stock_item.loc['종목코드']
         # 1년치 가격 데이터 추이를 필터링하기 위해 1년 기간 데이터 조회
         today = datetime.now()
         one_year_ago = today - timedelta(days=365)
@@ -26,7 +27,7 @@ def 일봉_신고거래량(stock_list):
         two_day_ago = latest_60days.iloc[-3]
 
         # 동전주 제외
-        if one_day_ago['종가'] < 2000:
+        if one_day_ago.loc['종가'] < 2000:
             continue
 
         # 전 날(1봉전) 60봉 신고거래량
@@ -47,9 +48,12 @@ def 일봉_신고거래량(stock_list):
         if one_day_ago.loc['종가'] < one_day_ago.loc['시가']:
             continue
 
-        find_stock_codes.append(stock_code)
+        one_day_ago.loc['종목코드'] = stock_code
+        one_day_ago.loc['종목명'] = stock_item.loc['종목명']
 
-    return find_stock_codes
+        find_stock_list.append(one_day_ago)
+
+    return pd.DataFrame(find_stock_list)
 
 def 내재가치():
     # 종목 리스트
@@ -85,4 +89,4 @@ def 내재가치():
     filtered_list = stock_fud_price_list[PERv10 & PBRv1 & inner_value]
     filtered_list = filtered_list.reset_index()
 
-    print(filtered_list['종목명'])
+    
