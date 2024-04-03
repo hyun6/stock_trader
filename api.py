@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from pprint import pprint
 from pykis import *
 from prettytable import PrettyTable
 from dotenv import load_dotenv
@@ -15,6 +17,23 @@ kis = PyKis(
 )
 
 account = kis.account('50102375-01')
+
+# 체결된 주문 조회
+now = datetime.now()
+daily_orders = account.daily_order_all(now - timedelta(days=1), now, ccld='미체결')
+for order in daily_orders.orders:
+    pprint(order)
+
+# 체결 이벤트 리스너 설정
+def on_oder(cli: KisRTClient, res: KisRTConclude):
+    print(f'{res.acnt_no} {res.acpt_yn_name} {res.cntg_isnm} {res.cntg_yn_name} {res.order_kind_name}', end=' ')
+    print(f'수량: {res.oder_qty:,}', end=' ')
+    print(f'가격: {res.cntg_unpr:,}')
+kis.rtclient.event.oder.add(on_oder)
+
+# 체결 이벤트 수신 시작
+kis.rtclient.add('체결', '$0380847')
+
 # balance = account.balance_all()
 
 # # 결과를 출력한다.
