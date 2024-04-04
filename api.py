@@ -19,10 +19,10 @@ kis = PyKis(
 account = kis.account('50102375-01')
 
 # 체결된 주문 조회
-now = datetime.now()
-daily_orders = account.daily_order_all(now - timedelta(days=1), now, ccld='미체결')
-for order in daily_orders.orders:
-    pprint(order)
+# now = datetime.now()
+# daily_orders = account.daily_order_all(now - timedelta(days=1), now)
+# for order in daily_orders.orders:
+#     pprint(order)
 
 # 체결 이벤트 리스너 설정
 def on_oder(cli: KisRTClient, res: KisRTConclude):

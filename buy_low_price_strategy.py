@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pykrx import stock
 import stock_finder
-from buy_db import buyListDB
+from order_repository import order_repository
 import time
 from pprint import pprint
 import api
@@ -22,20 +22,18 @@ def find_stock():
     buy_stock_list = find_stock_list[['종목코드', '종목명', '시가', '고가', '저가', '종가']]
     buy_stock_list = buy_stock_list.reset_index(drop=True)
 
-    buy_stock_list['매수가'] = int(buy_stock_list['저가'] * 1.01)
-    buy_stock_list['매도가'] = int(buy_stock_list['매수가'] * 1.1)
-    buy_stock_list['시작일'] = time.strftime('%Y%m%d')
-    buy_stock_list['만료일'] = (pd.Timestamp.now() + pd.Timedelta(days=14)).strftime('%Y%m%d')
-    buy_stock_list['주문번호'] = '' # 매수 주문 후 갱신함
+    buy_stock_list['매수목표가'] = (buy_stock_list['저가'] * 1.01)
+    buy_stock_list['매도목표가'] = (buy_stock_list['매수목표가'] * 1.1)
+    buy_stock_list['매매시작일'] = time.strftime('%Y%m%d')
+    buy_stock_list['매매만료일'] = (pd.Timestamp.now() + pd.Timedelta(days=14)).strftime('%Y%m%d')
+    buy_stock_list['매매전략명'] = '일봉저가매수'
     pprint(buy_stock_list)
 
-    # 기존 매수 예정 목록과 합쳐서 DB에 저장
-    exist_buy_list = buyListDB.get_buy_list()
-    buy_stock_list = pd.concat([exist_buy_list, buy_stock_list])
-    buyListDB.set_buy_list(buy_stock_list)
+    # 주문DB에 새로운 매수 주문 추가
+    order_repository.insert_buy_orders(buy_stock_list)
 
 def buy():
-    buy_stock_list = buyListDB.get_buy_list()
+    buy_stock_list = order_repository.get_buy_orders()
 
     # 호가 단위에 맞춰 매수 가격 보정
             # 1만~2만 원 미만: 10원
@@ -53,26 +51,26 @@ def buy():
         return price // bid_price * bid_price
 
     batting_price = 200000 # 20만 (임시로 설정)
-    order_dict = {}
+    stock_code_order_number_dict = {} # {종목코드: 주문번호}
     # 매수 요청
     for _, stock_item in buy_stock_list.iterrows():
-        buy_price = calc_by_bid_price(int(stock_item['매수가']))
+        buy_price = calc_by_bid_price(int(stock_item['매수목표가']))
         quantity = abs(int(batting_price / buy_price))
         order = api.account.buy(code=stock_item['종목코드'], unpr=buy_price, qty=quantity)
-        order_dict[stock_item['종목코드']] = order
+        stock_code_order_number_dict[stock_item['종목코드']] = order.odno
         time.sleep(0.5)
 
     # 매수 DB에 주문 번호를 갱신
-    buyListDB.update_order_number(order_dict)
+    order_repository.update_buy_order_number(stock_code_order_number_dict)
 
 # 체결된 종목을 조회해서 매수 DB에서 제거
 def update_buy_list():
-    buy_stock_list = buyListDB.get_buy_list()
+    buy_stock_list = order_repository.get_buy_orders()
     # 체결된 주문 조회
     now = datetime.now()
     daily_orders = api.account.daily_order_all(now - timedelta(days=1), now, ccld='체결')
 
-    for order in daily_orders.orders:
-        buy_stock_list.drop(buy_stock_list[buy_stock_list['주문번호'] == order.odno].index, inplace=True)
-    
-    buyListDB.set_buy_list(buy_stock_list)
+    # TODO: 체결된 주문 정보 갱신
+    #  - 주문 상태 '매수완료'
+    #  - 매수가
+    # ...
