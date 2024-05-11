@@ -62,14 +62,18 @@ class OrderRepository(SingletonInstance):
         query = BuyOrder.select()
         return pd.DataFrame(query.dicts())
 
-    # 매수 주문 번호를 갱신한다
+    # 매수 주문 중 상태로 갱신
     #  - 체결된 종목은 제거하기 위해 사용함
-    def update_buy_order_number(self, order_dict: dict) -> None:
-        for code, order_number in order_dict.items():
-            BuyOrder.update(주문번호=order_number).where(BuyOrder.종목코드 == code).execute()
+    def update_buying_status(self, code: str, order_number: str) -> None:
+        BuyOrder.update(주문번호=order_number).where(BuyOrder.종목코드 == code).execute()
+        BuyOrder.update(상태=OrderStatus.매수중).where(BuyOrder.종목코드 == code).execute()
 
-    def delete_buy_order(self, order_dict: dict) -> None:
-        for code, order_number in order_dict.items():
-            BuyOrder.delete().where(BuyOrder.종목코드 == code).execute()
+    # 매수 완료 상태로 갱신
+    def update_buy_complete_status(self, code: str) -> None:
+        BuyOrder.delete().where(BuyOrder.종목코드 == code).execute()
 
-order_repository = OrderRepository()
+    def clear_buy_status(self) -> None:
+        BuyOrder.update(주문번호=None).execute()
+        BuyOrder.update(상태=OrderStatus.대기).execute()
+
+order_repository = OrderRepository.instance()

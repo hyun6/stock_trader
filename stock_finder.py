@@ -9,6 +9,9 @@ def 일봉_신고거래량(df_all_stocks) -> pd.DataFrame:
     find_stock_list = []
     for _, stock_item in df_all_stocks.iterrows():
         stock_code = stock_item.loc['종목코드']
+
+        # TODO: 우선주, 관리주 등 제외하기 (한투API통해 가능할듯)
+
         # 1년치 가격 데이터 추이를 필터링하기 위해 1년 기간 데이터 조회
         today = datetime.now()
         one_year_ago = today - timedelta(days=365)
@@ -36,12 +39,12 @@ def 일봉_신고거래량(df_all_stocks) -> pd.DataFrame:
         if latest_60days[:-1]['거래량'].max() != one_day_ago.loc['거래량']:
             continue
         
-        # 이틀전 대비 어제 종가 15% 이상 상승
+        # 이틀전 종가 대비 어제 종가 15% 이상 상승
         if int(two_day_ago.loc['종가'] * 1.15) > one_day_ago.loc['종가']:
             continue
 
-        # 이틀전 대비 어제 고가 20% 이상 상승
-        if int(two_day_ago.loc['고가'] * 1.20) > one_day_ago.loc['고가']:
+        # 이틀전 종가 대비 어제 고가 20% 이상 상승
+        if int(two_day_ago.loc['종가'] * 1.20) > one_day_ago.loc['고가']:
             continue
 
         # 이틀부터 연속 양봉 발생
@@ -54,6 +57,8 @@ def 일봉_신고거래량(df_all_stocks) -> pd.DataFrame:
         find_stock_list.append(one_day_ago)
 
     return pd.DataFrame(find_stock_list)
+
+# 일봉_신고거래량(pd.DataFrame([1]))
 
 def 내재가치():
     # 종목 리스트

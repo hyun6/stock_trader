@@ -1,17 +1,14 @@
 from datetime import datetime, timedelta
 from pprint import pprint
-from pykis import *
+import pykis as pk
 from prettytable import PrettyTable
-from dotenv import load_dotenv
-import os
+import env
 
-load_dotenv()
-
-kis = PyKis(
+kis = pk.PyKis(
     # 앱 키  예) Pa0knAM6JLAjIa93Miajz7ykJIXXXXXXXXXX
-    appkey=os.environ.get('APPKEY'),
+    appkey=env.get('APPKEY'),
     # 앱 시크릿  예) V9J3YGPE5q2ZRG5EgqnLHn7XqbJjzwXcNpvY . . .
-    appsecret=os.environ.get('APPSECRET'),
+    appsecret=env.get('APPSECRET'),
     # 가상 계좌 여부
     virtual_account=True,
 )
@@ -25,7 +22,7 @@ account = kis.account('50102375-01')
 #     pprint(order)
 
 # 체결 이벤트 리스너 설정
-def on_oder(cli: KisRTClient, res: KisRTConclude):
+def on_oder(cli: pk.KisRTClient, res: pk.KisRTConclude):
     print(f'{res.acnt_no} {res.acpt_yn_name} {res.cntg_isnm} {res.cntg_yn_name} {res.order_kind_name}', end=' ')
     print(f'수량: {res.oder_qty:,}', end=' ')
     print(f'가격: {res.cntg_unpr:,}')
