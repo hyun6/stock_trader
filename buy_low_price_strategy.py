@@ -3,19 +3,21 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pykrx import stock
 import stock_finder
-from order_repository import order_repository
+from order_repository import OrderStatus, order_repository
 import time
 from pprint import pprint
 import api
 
-# 코스피, 코스닥에서 일봉 신고거래량 검색
-def find_stock():
-    kospi_list = pd.DataFrame({'종목코드':stock.get_market_ticker_list(market="KOSPI")})
-    kosdaq_list = pd.DataFrame({'종목코드':stock.get_market_ticker_list(market="KOSDAQ")})
+TIME_FRAME = '10m'
 
-    stock_list = pd.concat([kospi_list, kosdaq_list])
-    stock_list['종목명'] = stock_list['종목코드'].map(lambda x: stock.get_market_ticker_name(x))
-    find_stock_list = stock_finder.일봉_신고거래량(stock_list)
+# 코스피, 코스닥에서 일봉 신고거래량 검색
+def find_stock() -> pd.DataFrame:
+    kospi_stock_codes = pd.DataFrame({'종목코드':stock.get_market_ticker_list(market="KOSPI")})
+    kosdaq_stock_codes = pd.DataFrame({'종목코드':stock.get_market_ticker_list(market="KOSDAQ")})
+
+    kospi_kosdaq_stock_list = pd.concat([kospi_stock_codes, kosdaq_stock_codes])
+    kospi_kosdaq_stock_list['종목명'] = kospi_kosdaq_stock_list['종목코드'].map(lambda x: stock.get_market_ticker_name(x))
+    find_stock_list = stock_finder.일봉_신고거래량(kospi_kosdaq_stock_list)
     pprint(find_stock_list)
 
     # 일봉 신고거래량 검색된 종목 저가 매수 리스트 저장
@@ -31,9 +33,12 @@ def find_stock():
 
     # 주문DB에 새로운 매수 주문 추가
     order_repository.insert_buy_orders(buy_stock_list)
+    return buy_stock_list
 
 def buy():
     buy_stock_list = order_repository.get_buy_orders()
+    # 매수 대기 중인 종목만 추출
+    buy_stock_list = buy_stock_list[buy_stock_list['상태'] == OrderStatus.대기]
 
     # 호가 단위에 맞춰 매수 가격 보정
             # 1만~2만 원 미만: 10원
@@ -55,22 +60,35 @@ def buy():
     # 매수 요청
     for _, stock_item in buy_stock_list.iterrows():
         buy_price = calc_by_bid_price(int(stock_item['매수목표가']))
-        quantity = abs(int(batting_price / buy_price))
-        order = api.account.buy(code=stock_item['종목코드'], unpr=buy_price, qty=quantity)
-        stock_code_order_number_dict[stock_item['종목코드']] = order.odno
-        time.sleep(0.5)
+        if batting_price < buy_price:
+            quantity = 1
+        else:
+            quantity = abs(int(batting_price / buy_price))
+            try:
+                code = stock_item['종목코드']
+                order = api.account.buy(code=code, unpr=buy_price, qty=quantity)
 
-    # 매수 DB에 주문 번호를 갱신
-    order_repository.update_buy_order_number(stock_code_order_number_dict)
+                # 매수DB: 매수 중 상태로 갱신
+                order_repository.update_buying_status(code=code, order_number=order.odno)
+            except Exception as e:
+                pprint(e)
+                time.sleep(0.5)
+                continue
+            stock_code_order_number_dict[stock_item['종목코드']] = order.odno
+            time.sleep(0.5)
 
 # 체결된 종목을 조회해서 매수 DB에서 제거
 def update_buy_list():
     buy_stock_list = order_repository.get_buy_orders()
     # 체결된 주문 조회
     now = datetime.now()
-    daily_orders = api.account.daily_order_all(now - timedelta(days=1), now, ccld='체결')
+    buy_complete_orders = api.account.daily_order_all(now - timedelta(days=1), now, ccld='체결')
 
     # TODO: 체결된 주문 정보 갱신
     #  - 주문 상태 '매수완료'
-    #  - 매수가
+    #  - 매수 체결 가격 갱신
     # ...
+    for order in buy_complete_orders.orders:
+        complete_order = buy_stock_list.loc[buy_stock_list['주문번호'] == order.odno]
+        complete_order['주문상태'] = '매수완료'
+        complete_order['매수가격'] = order.ord_unpr

@@ -6,14 +6,19 @@ import env
 
 kis = pk.PyKis(
     # 앱 키  예) Pa0knAM6JLAjIa93Miajz7ykJIXXXXXXXXXX
-    appkey=env.get('APPKEY'),
+    appkey=env.get(env.EnvNames.APPKEY),
     # 앱 시크릿  예) V9J3YGPE5q2ZRG5EgqnLHn7XqbJjzwXcNpvY . . .
-    appsecret=env.get('APPSECRET'),
+    appsecret=env.get(env.EnvNames.APPSECRET),
     # 가상 계좌 여부
     virtual_account=True,
 )
 
 account = kis.account('50102375-01')
+
+# 휴장일 여부
+def is_holiday() -> bool:
+    return kis.market.today().is_holiday
+
 
 # 체결된 주문 조회
 # now = datetime.now()

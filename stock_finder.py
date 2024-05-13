@@ -3,7 +3,7 @@ import numpy as np
 from pykrx import stock
 from datetime import datetime, timedelta
 
-def 일봉_신고거래량(df_all_stocks) -> pd.DataFrame:
+def 일봉_신고거래량(df_all_stocks: pd.DataFrame) -> pd.DataFrame:
     # 모든 종목을 순회하며 조건에 부합하는 종목을 찾는다
     # 시가    고가    저가    종가      거래량       등락률
     find_stock_list = []
