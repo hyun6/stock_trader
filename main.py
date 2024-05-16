@@ -5,6 +5,7 @@ import api
 import buy_low_price_strategy
 from order_repository import order_repository
 import notify
+import command_handler
 
 # TODO: 히스토리와 거래중인 종목을 관리할 DB 분리
 
@@ -39,11 +40,12 @@ async def main():
         await notify.send_message('오늘은 휴장일!')
         return
 
-    # TODO: telegram 메시지 핸들러 task 추가
-
     await 주식장_시작전()
     await 주식장_장중()
     await 주식장_마감후()
 
 if __name__ == '__main__':
+    # telegram 커맨드 핸들러
+    command_handler.init()
+
     asyncio.run(main())
