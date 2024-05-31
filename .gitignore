@@ -1,0 +1,10 @@
+.vscode
+.conda
+.continue
+
+__pycache__
+
+.env
+ui
+*.db
+kis_api.py
