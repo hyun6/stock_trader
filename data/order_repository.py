@@ -1,9 +1,7 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Iterator, List, Self
+from typing import Callable, Self
 from attrs import asdict, frozen
-import pandas as pd
-from data.order_model import OrderModel, OrderResult, OrderStatus, OrderType
+from data.order_model import OrderModel, OrderStatus, OrderType
 from util import SingletonInstance
 
 
@@ -53,7 +51,7 @@ class OrderRepository(SingletonInstance):
         OrderModel.insert(asdict(order)).execute()
 
     # 복수의 주문을 한번에 기록
-    def insert_orders(self, orders: List[OrderDto]) -> None:
+    def insert_orders(self, orders: list[OrderDto]) -> None:
         print(orders)
         orders_record = list(map(asdict, orders))
 
@@ -65,7 +63,7 @@ class OrderRepository(SingletonInstance):
         query = OrderModel.select().where(filter_fn)
         # TODO: list로 변환하지 않고 iterator 그대로 리턴하는게 필요한지 검토 필요
         # 주문 개수가 많아지면 성능상 필요할 수 있어 보임, 사용하는 측에서 마지막 몇 개만 take하는 방식으로 최적화 가능
-        return map(OrderDto.from_dict, query.dicts())
+        return list(map(OrderDto.from_dict, query.dicts()))
 
     # 매수 주문 중 상태로 갱신
     #  - 체결된 종목은 제거하기 위해 사용함
