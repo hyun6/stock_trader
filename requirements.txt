@@ -1,0 +1,10 @@
+python-telegram-bot
+pykrx
+pprint
+python-kis
+pandas
+python-dotenv
+peewee
+prettytable
+tabulate
+attrs
