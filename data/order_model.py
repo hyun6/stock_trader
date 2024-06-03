@@ -27,6 +27,9 @@ class OrderResult(StrEnum):
 
 # 주문 정보 DB 스키마
 class OrderModel(BaseModel):
+    class Meta:
+        table_name = "orders"
+
     id = AutoField()
     주문번호 = CharField(unique=True)
     종류 = CharField(default=OrderType.매수)
