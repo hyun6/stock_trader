@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Callable, Self
 from attrs import asdict, frozen
 from data.order_model import OrderModel, OrderStatus, OrderType
-from util import SingletonInstance
+from util.singleton import SingletonInstance
 
 
 @frozen
@@ -68,10 +68,7 @@ class OrderRepository(SingletonInstance):
     # 매수 주문 중 상태로 갱신
     #  - 체결된 종목은 제거하기 위해 사용함
     def update_buying_status(self, code: str, order_number: str) -> None:
-        OrderModel.update(주문번호=order_number).where(
-            OrderModel.종목코드 == code
-        ).execute()
-        OrderModel.update(상태=OrderStatus.매수주문중).where(
+        OrderModel.update(주문번호=order_number, 상태=OrderStatus.매수주문중).where(
             OrderModel.종목코드 == code
         ).execute()
 
