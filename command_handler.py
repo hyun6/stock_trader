@@ -15,6 +15,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def init():
     application = ApplicationBuilder().token(env.get(env.EnvNames.TELEGRAM_TOKEN)).build()
     
+    # TODO: telegram을 통한 명령, 조회 기능 추가
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
     

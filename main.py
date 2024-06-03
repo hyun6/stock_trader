@@ -3,7 +3,7 @@ import datetime
 
 import api
 import buy_low_price_strategy
-from order_repository import order_repository
+from data.order_repository import order_repository
 import notify
 import command_handler
 

@@ -1,0 +1,55 @@
+@startuml class_diagram
+
+class TradeApi {
+    // TODO: 너무 커지면 역할에 맞게 클래스 쪼개기
+    // 매수, 매도 수행
+    +void 매수()
+    +void 매도()
+    ---
+    // 계좌 정보 관리
+    +잔고조회()
+    +수익률조회()
+}
+
+interface ITradeStrategy {
+    // 매매 전략 인터페이스
+    __init__(TradeApi api, TradeStrategyRepository repository)
+    +void 시작()
+    ---
+    #void 종목선정()
+    #void 매수신호체크()
+    #void 매도신호체크()
+    #void 매수()
+    #void 매도()
+    ---
+    #string name
+}
+
+class LowPriceTradeStrategy {
+    // 기준점 저가매수 전략 구현한 구체 클래스
+}
+
+class TradeStrategyService {
+    // 외부에 기능을 제공하는 퍼사드 클래스
+    __init__(ITradeStrategy[] strategies)
+    +void 매매전략추가(ITradeStrategy strategy)
+    +void 시작()
+    ---
+    -ITradeStrategy[] strategies
+}
+
+class TradeStrategyRepository {
+    // 매매 전략 관련 데이터
+}
+
+JSON StrategyData {
+    "매수일": ""
+}
+
+LowPriceTradeStrategy -up-|> ITradeStrategy
+ITradeStrategy -up-> TradeApi
+ITradeStrategy -> TradeStrategyRepository
+TradeStrategyRepository -down-> StrategyData
+TradeStrategyService -> ITradeStrategy
+
+@enduml
